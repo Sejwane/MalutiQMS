@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { FileText, AlertTriangle, Clock, CheckCircle, User, Eye } from 'lucide-react';
 import { collection, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { db } from '../firebase'; 
-// Import your newly created component:
-// import SearchBar from './SearchBar'; 
 
 export default function Dashboard() {
   const [popularDocs, setPopularDocs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPopularDocs = async () => {
@@ -39,83 +39,94 @@ export default function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 font-sans">
       
-      {/* 
-        1. SEARCH BAR COMPONENT 
-        You can drop the component here, or move it to a layout file 
-        if it belongs in the global header.
-      */}
-      {/* <SearchBar onSearch={(data) => console.log(data)} /> */}
-
-      {/* 2. HERO BANNER GRID */}
+      {/* 2. HERO BANNER GRID - NOW FUNCTIONAL WITH QMS ARCHITECTURE */}
       <div className="grid grid-cols-1 md:grid-cols-4 md:grid-rows-2 gap-5 h-auto md:h-[420px] mb-14">
-        {/* Large Left Tile */}
-        <div className="relative group cursor-pointer overflow-hidden rounded-2xl col-span-1 md:col-span-2 md:row-span-2 bg-[#141632] shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-t from-[#141632] via-[#141632]/50 to-transparent transition-colors z-10 duration-500" />
+        
+        {/* Large Left Tile: General Management System */}
+        <div 
+          onClick={() => navigate('/qms/general')}
+          className="relative group cursor-pointer overflow-hidden rounded-2xl col-span-1 md:col-span-2 md:row-span-2 bg-[#141632] shadow-sm"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-[#141632] via-[#141632]/60 to-transparent transition-colors z-10 duration-500 group-hover:from-[#00B5E2]/90" />
           <img 
-            src="https://images.unsplash.com/photo-1600880292203-757bb62b4baf?q=80&w=1200&auto=format&fit=crop" 
-            alt="View all Documents" 
+            src="/Hero_banner.JPG" 
+            alt="General Management System" 
             onError={handleImageError}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-80"
           />
           <div className="absolute bottom-8 left-8 right-8 z-20">
-            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2 drop-shadow-md">View all Documents</h2>
-            <p className="text-gray-100 text-sm md:text-base hidden md:block max-w-md drop-shadow-sm">Access the complete registry of approved QMS policies and procedures.</p>
+            <h2 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2 drop-shadow-md">General Management System</h2>
+            <p className="text-gray-100 text-sm md:text-base hidden md:block max-w-md drop-shadow-sm">Access the central hub for all College policies, procedures, and workflows.</p>
           </div>
         </div>
 
-        {/* Top Middle Tile */}
-        <div className="relative group cursor-pointer overflow-hidden rounded-2xl col-span-1 md:col-span-1 md:row-span-1 bg-[#00B5E2] shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent z-10 duration-300" />
+        {/* Top Middle Tile: Document Control */}
+        <div 
+          onClick={() => navigate('/qms/document-control')}
+          className="relative group cursor-pointer overflow-hidden rounded-2xl col-span-1 md:col-span-1 md:row-span-1 bg-[#00B5E2] shadow-sm"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10 duration-300 group-hover:from-[#141632]" />
           <img 
-            src="https://images.unsplash.com/photo-1510511459019-5efa7ae17e17?q=80&w=600&auto=format&fit=crop" 
-            alt="ISO 27001" 
+            src="/WhatsApp Image 2026-07-15 at 15.55.30 (1).jpeg" 
+            alt="Document Control Sheet" 
             onError={handleImageError}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute bottom-5 left-6 z-20">
-            <h3 className="text-xl font-bold text-white drop-shadow-md">ISO 27001</h3>
+            <h3 className="text-xl font-bold text-white drop-shadow-md">Document Control Sheet</h3>
           </div>
         </div>
 
-        {/* Top Right Tile */}
-        <div className="relative group cursor-pointer overflow-hidden rounded-2xl col-span-1 md:col-span-1 md:row-span-1 bg-[#F2A900] shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent z-10 duration-300" />
+        {/* Top Right Tile: Amendment Table */}
+        <div 
+          onClick={() => navigate('/qms/amendments')}
+          className="relative group cursor-pointer overflow-hidden rounded-2xl col-span-1 md:col-span-1 md:row-span-1 bg-[#F2A900] shadow-sm"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10 duration-300 group-hover:from-[#141632]" />
           <img 
-            src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?q=80&w=600&auto=format&fit=crop" 
-            alt="ISO 9001" 
+            src="/WhatsApp Image 2026-07-15 at 15.55.33 (1).jpeg" 
+            alt="Amendment Table" 
             onError={handleImageError}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-90"
           />
           <div className="absolute bottom-5 left-6 z-20">
-            <h3 className="text-xl font-bold text-white drop-shadow-md">ISO 9001</h3>
+            <h3 className="text-xl font-bold text-white drop-shadow-md">Amendment Table</h3>
           </div>
         </div>
 
-        {/* Bottom Middle Tile */}
-        <div className="relative group cursor-pointer overflow-hidden rounded-2xl col-span-1 md:col-span-1 md:row-span-1 bg-[#009639] shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent z-10 duration-300" />
+        {/* Bottom Middle Tile: Core Processes */}
+        <div 
+          onClick={() => navigate('/qms/core-processes')}
+          className="relative group cursor-pointer overflow-hidden rounded-2xl col-span-1 md:col-span-1 md:row-span-1 bg-[#009639] shadow-sm"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10 duration-300 group-hover:from-[#141632]" />
           <img 
-            src="https://images.unsplash.com/photo-1573164713988-8665fc963095?q=80&w=600&auto=format&fit=crop" 
-            alt="Document Tracker" 
+            src="/WhatsApp Image 2026-07-15 at 15.55.34 (2).jpeg" 
+            alt="Core Processes" 
             onError={handleImageError}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute bottom-5 left-6 z-20">
-            <h3 className="text-xl font-bold text-white drop-shadow-md">Document Tracker</h3>
+            <h3 className="text-xl font-bold text-white drop-shadow-md">Core Processes</h3>
+            <p className="text-xs text-gray-200 mt-1">Planning, Assessment & Delivery</p>
           </div>
         </div>
 
-        {/* Bottom Right Tile */}
-        <div className="relative group cursor-pointer overflow-hidden rounded-2xl col-span-1 md:col-span-1 md:row-span-1 bg-slate-900 shadow-sm">
-          <div className="absolute inset-0 bg-gradient-to-t from-red-900/90 via-black/40 to-transparent z-10 duration-300" />
+        {/* Bottom Right Tile: Support Services */}
+        <div 
+          onClick={() => navigate('/qms/support-services')}
+          className="relative group cursor-pointer overflow-hidden rounded-2xl col-span-1 md:col-span-1 md:row-span-1 bg-slate-900 shadow-sm"
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10 duration-300 group-hover:from-[#141632]" />
           <img 
-            src="https://images.unsplash.com/photo-1611270626045-a080287df71a?q=80&w=600&auto=format&fit=crop" 
-            alt="Expired Documents" 
+            src="/MalutiLogo.png" 
+            alt="Support Services" 
             onError={handleImageError}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105 opacity-60"
           />
           <div className="absolute bottom-5 left-6 z-20">
-            <h3 className="text-xl font-bold text-white drop-shadow-md">Expired Documents</h3>
+            <h3 className="text-xl font-bold text-white drop-shadow-md">Support Services</h3>
+            <p className="text-xs text-gray-200 mt-1">Governance, HR, IT & Finance</p>
           </div>
         </div>
       </div>

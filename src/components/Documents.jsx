@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Plus, Trash2, Eye, UploadCloud } from 'lucide-react';
+import { FileText, Plus, Trash2, Eye, UploadCloud, XCircle, Calendar, User, Search } from 'lucide-react';
 import { collection, query, where, getDocs, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { db, auth } from '../firebase'; 
 
 export default function Documents() {
@@ -9,7 +10,13 @@ export default function Documents() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   
-  // Form state
+  const location = useLocation();
+  const navigate = useNavigate();
+  
+  // Catch incoming state from both Governance (departments) and SearchBar (keyword)
+  const activeFilters = location.state?.filterDepartments || null;
+  const searchQuery = location.state?.keyword || null;
+
   const [title, setTitle] = useState('');
   const [documentNumber, setDocumentNumber] = useState('');
   const [department, setDepartment] = useState('HUMAN_RESOURCES');
@@ -23,10 +30,32 @@ export default function Documents() {
       const q = query(docsRef, where('isDeleted', '==', false));
       const querySnapshot = await getDocs(q);
       
-      const docsData = querySnapshot.docs.map(doc => ({
+      let docsData = querySnapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+
+      // Filter by Department (if coming from Governance page)
+      if (activeFilters) {
+        docsData = docsData.filter(doc => activeFilters.includes(doc.department));
+      }
+
+      // Filter by Keyword (if coming from Global Search)
+      if (searchQuery) {
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        docsData = docsData.filter(doc => 
+          doc.title.toLowerCase().includes(lowerCaseQuery) ||
+          doc.documentNumber.toLowerCase().includes(lowerCaseQuery)
+        );
+      }
+
+      // Sort by newest first
+      docsData.sort((a, b) => {
+        const timeA = a.createdAt?.toMillis() || 0;
+        const timeB = b.createdAt?.toMillis() || 0;
+        return timeB - timeA;
+      });
+
       setDocuments(docsData);
     } catch (error) {
       console.error("Error fetching documents:", error);
@@ -37,9 +66,8 @@ export default function Documents() {
 
   useEffect(() => {
     fetchDocuments();
-  }, []);
+  }, [activeFilters, searchQuery]); // Re-run if filter or search changes
 
-  // CREATE: Handle file upload bypass and database entry
   const handleCreateDocument = async (e) => {
     e.preventDefault();
     if (!title || !documentNumber || !file) {
@@ -49,15 +77,9 @@ export default function Documents() {
 
     try {
       setIsUploading(true);
-
-      // --- BYPASSING FIREBASE STORAGE ---
-      // Simulating a network delay so the "Uploading..." button state looks realistic
       await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Using a safe, public dummy PDF link for testing purposes
       const dummyFileUrl = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf";
 
-      // Save everything to Firestore
       await addDoc(collection(db, 'documents'), {
         title,
         documentNumber,
@@ -65,14 +87,13 @@ export default function Documents() {
         category,
         status: 'PENDING_APPROVAL',
         currentVersion: 'R01',
-        fileUrl: dummyFileUrl, // Saving the dummy link
+        fileUrl: dummyFileUrl, 
         isDeleted: false,
         viewCount: 0,
-        authorId: auth.currentUser?.uid || 'unknown',
+        authorId: auth.currentUser?.email || auth.currentUser?.uid || 'System Admin',
         createdAt: serverTimestamp(),
       });
 
-      // Reset form and close
       setTitle('');
       setDocumentNumber('');
       setFile(null);
@@ -83,6 +104,19 @@ export default function Documents() {
       alert("Error uploading document. Please try again.");
     } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleViewDocument = async (docId, fileUrl, currentViews) => {
+    window.open(fileUrl, '_blank');
+    try {
+      const docRef = doc(db, 'documents', docId);
+      await updateDoc(docRef, {
+        viewCount: (currentViews || 0) + 1
+      });
+      setTimeout(fetchDocuments, 1000);
+    } catch (error) {
+      console.error("Error updating view count:", error);
     }
   };
 
@@ -100,8 +134,19 @@ export default function Documents() {
     }
   };
 
+  const clearFilters = () => {
+    // Clear both state parameters
+    navigate('/documents', { replace: true, state: {} });
+  };
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'Just now';
+    const date = timestamp.toDate();
+    return date.toLocaleDateString('en-ZA', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-4 font-['Inter',sans-serif]">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 font-['Inter',sans-serif]">
       
       <div className="flex justify-between items-center mb-8">
         <div>
@@ -117,6 +162,41 @@ export default function Documents() {
         </button>
       </div>
 
+      {/* Department Filter Banner */}
+      {activeFilters && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg mb-6 flex justify-between items-center shadow-sm">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-sm">Viewing Department Filter:</span>
+            <span className="text-xs bg-amber-200 px-2 py-1 rounded-md font-mono">{activeFilters.join(', ')}</span>
+          </div>
+          <button 
+            onClick={clearFilters}
+            className="flex items-center gap-1 text-sm font-bold text-amber-700 hover:text-amber-900 transition-colors"
+          >
+            <XCircle size={16} /> Clear Filter
+          </button>
+        </div>
+      )}
+
+      {/* Global Search Banner */}
+      {searchQuery && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-lg mb-6 flex justify-between items-center shadow-sm">
+          <div className="flex items-center gap-2">
+            <Search size={18} className="text-blue-600" />
+            <span className="font-bold text-sm">Search Results for:</span>
+            <span className="text-sm bg-white border border-blue-100 px-2 py-0.5 rounded-md font-mono font-bold text-blue-900">
+              "{searchQuery}"
+            </span>
+          </div>
+          <button 
+            onClick={clearFilters}
+            className="flex items-center gap-1 text-sm font-bold text-blue-700 hover:text-blue-900 transition-colors"
+          >
+            <XCircle size={16} /> Clear Search
+          </button>
+        </div>
+      )}
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         {loading ? (
           <div className="text-center py-12 text-gray-500">Loading document control registry...</div>
@@ -127,8 +207,9 @@ export default function Documents() {
                 <tr className="bg-gray-50 border-b border-gray-200 text-xs font-bold text-gray-600 uppercase tracking-wider">
                   <th className="py-4 px-6">Document Name / Number</th>
                   <th className="py-4 px-6">Department</th>
-                  <th className="py-4 px-6">Status</th>
-                  <th className="py-4 px-6">Version</th>
+                  <th className="py-4 px-6">Uploaded By (When)</th>
+                  <th className="py-4 px-6 text-center">Version</th>
+                  <th className="py-4 px-6 text-center">Views</th>
                   <th className="py-4 px-6 text-right">Actions</th>
                 </tr>
               </thead>
@@ -140,25 +221,39 @@ export default function Documents() {
                       <div className="text-xs text-gray-400 font-mono">{doc.documentNumber}</div>
                     </td>
                     <td className="py-4 px-6">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-[#00B5E2]">
-                        {doc.department}
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 text-[#00B5E2] uppercase">
+                        {doc.department.replace('_', ' ')}
                       </span>
                     </td>
                     <td className="py-4 px-6">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                        doc.status === 'APPROVED' ? 'bg-green-50 text-[#009639]' : 'bg-amber-50 text-amber-600'
-                      }`}>
-                        {doc.status}
-                      </span>
+                      <div className="flex items-center gap-2 mb-1">
+                        <User size={12} className="text-gray-400" />
+                        <span className="text-xs font-semibold text-gray-700 truncate max-w-[120px]" title={doc.authorId}>
+                          {doc.authorId}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-400">
+                        <Calendar size={12} />
+                        {formatDate(doc.createdAt)}
+                      </div>
                     </td>
-                    <td className="py-4 px-6 font-mono text-xs font-bold text-gray-700">
+                    <td className="py-4 px-6 text-center font-mono text-xs font-bold text-gray-700">
                       {doc.currentVersion}
                     </td>
-                    <td className="py-4 px-6 text-right space-x-2">
+                    <td className="py-4 px-6 text-center">
+                      <div className="inline-flex items-center justify-center px-2 py-1 bg-gray-50 rounded text-xs font-bold text-gray-500 border border-gray-100">
+                        {doc.viewCount || 0}
+                      </div>
+                    </td>
+                    <td className="py-4 px-6 text-right space-x-3">
                       {doc.fileUrl && (
-                        <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-gray-400 hover:text-[#00B5E2] transition-colors p-1" title="View PDF">
+                        <button 
+                          onClick={() => handleViewDocument(doc.id, doc.fileUrl, doc.viewCount)} 
+                          className="inline-block text-gray-400 hover:text-[#00B5E2] transition-colors p-1" 
+                          title="View & Track Document"
+                        >
                           <Eye size={18} />
-                        </a>
+                        </button>
                       )}
                       <button onClick={() => handleSoftDelete(doc.id)} className="text-gray-400 hover:text-red-600 transition-colors p-1" title="Archive">
                         <Trash2 size={18} />
@@ -172,7 +267,7 @@ export default function Documents() {
         ) : (
           <div className="text-center py-16">
             <FileText className="mx-auto text-gray-300 mb-3" size={48} />
-            <p className="text-gray-600 font-semibold">No active documents registered.</p>
+            <p className="text-gray-600 font-semibold">No documents found matching your criteria.</p>
           </div>
         )}
       </div>
@@ -205,10 +300,12 @@ export default function Documents() {
                 <div>
                   <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Department</label>
                   <select value={department} onChange={(e) => setDepartment(e.target.value)} className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm outline-none">
+                    <option value="EXECUTIVE">Executive Council</option>
                     <option value="HUMAN_RESOURCES">Human Resources</option>
                     <option value="FINANCE">Finance</option>
                     <option value="ACADEMIC">Academic</option>
                     <option value="IT">IT Support</option>
+                    <option value="STUDENT_SUPPORT">Student Support</option>
                   </select>
                 </div>
                 <div>

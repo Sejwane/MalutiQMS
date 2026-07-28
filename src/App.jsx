@@ -8,7 +8,16 @@ import Login from "./components/Login";
 import Header from "./components/Header";
 import Dashboard from "./components/Dashboard";
 import Documents from "./components/Documents"; 
-import SearchBar from "./components/SearchBar"; // <-- 1. Imported your SearchBar
+import SearchBar from "./components/SearchBar"; 
+import Governance from "./components/Governance";
+import AdminPanel from "./components/AdminPanel";
+
+// QMS Pages
+import GeneralManagement from "./pages/GeneralManagement";
+import DocumentControl from "./pages/DocumentControl";
+import Amendments from "./pages/Amendments";
+import CoreProcesses from "./pages/CoreProcesses";
+import SupportServices from "./pages/SupportServices";
 
 /**
  * PROTECTED LAYOUT WRAPPER
@@ -31,7 +40,7 @@ const ProtectedLayout = ({ user }) => {
       <main className="pt-32 pb-12">
         
         {/* GLOBAL SEARCH BAR - Appears on every protected page automatically */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 mb-8">
           <SearchBar onSearch={handleGlobalSearch} />
         </div>
 
@@ -42,7 +51,6 @@ const ProtectedLayout = ({ user }) => {
     </div>
   );
 };
-
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -81,7 +89,18 @@ export default function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/documents" element={<Documents />} />
           
-          {/* Add future protected routes here (e.g., <Route path="/admin" element={<AdminPanel />} />) */}
+          {/* PROTECTED ROUTE: Governance Matrix */}
+          <Route path="/governance" element={<Governance />} />
+          
+          {/* PROTECTED ROUTE: Admin Panel */}
+          <Route path="/admin" element={<AdminPanel />} />
+
+          {/* QMS DASHBOARD ROUTING */}
+          <Route path="/qms/general" element={<GeneralManagement />} />
+          <Route path="/qms/document-control" element={<DocumentControl />} />
+          <Route path="/qms/amendments" element={<Amendments />} />
+          <Route path="/qms/core-processes" element={<CoreProcesses />} />
+          <Route path="/qms/support-services" element={<SupportServices />} />
         
         </Route>
 
